@@ -1,0 +1,39 @@
+# Kernel source
+linux-*/
+*.tar.xz
+*.tar.gz
+*.tar.bz2
+
+# Build artifacts
+*.o
+*.ko
+*.mod
+*.mod.c
+*.cmd
+modules.order
+Module.symvers
+vmlinux
+vmlinuz
+
+# RPM packages
+*.rpm
+rpmbuild/
+
+# Kiwi-ng build output
+build/
+image-root/
+*.qcow2
+*.raw
+*.iso
+*.vmdk
+
+# OS / Editor
+.DS_Store
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Logs
+*.log
