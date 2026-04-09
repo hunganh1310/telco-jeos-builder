@@ -16,6 +16,7 @@ Build a minimal, performance-tuned Linux OS (JeOS) optimized for Telco/NFV workl
 | [Task 4](task4-testing/) | Testing — Benchmark & validate | ⏳ Pending |
 
 ## 🏗️ Architecture
+```text
 ┌─────────────────────────────────────────────┐
 │              QCOW2 Image (Kiwi-ng)          │
 │  ┌────────────────────────────────────────┐ │
@@ -35,6 +36,7 @@ Build a minimal, performance-tuned Linux OS (JeOS) optimized for Telco/NFV workl
 │  │  └── CPU isolation setup               │ │
 │  └────────────────────────────────────────┘ │
 └─────────────────────────────────────────────┘
+```
 
 
 ## 🛠️ Tech Stack
