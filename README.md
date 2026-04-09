@@ -62,13 +62,15 @@ Build a minimal, performance-tuned Linux OS (JeOS) optimized for Telco/NFV workl
 cd task1-kernel
 bash configure-telco-kernel.sh
 # (See task1-kernel/README.md for full instructions)
+```
 
-📚 References
-    - Linux Kernel Documentation
-    - DPDK System Requirements
-    - Red Hat NFV Tuning Guide
-    - Kiwi-ng Documentation
-    - openSUSE JeOS
-👤 Author
-    - Hung Anh To | anh.to@ericsson.com | hunganh1310.work@gmail.com
+## 📚 References
+- Linux Kernel Documentation
+- DPDK System Requirements
+- Red Hat NFV Tuning Guide
+- Kiwi-ng Documentation
+- openSUSE JeOS
+
+## 👤 Author
+- Hung Anh To | anh.to@ericsson.com | hunganh1310.work@gmail.com
 
