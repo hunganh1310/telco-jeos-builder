@@ -37,3 +37,10 @@ image-root/
 
 # Logs
 *.log
+
+# Kernel staging (binary modules, tạo lại bằng make modules_install)
+task1-kernel/staging/
+task1-kernel/rpmbuild/
+task1-kernel/rpm-build.log
+task1-kernel/kernel-build*.log
+task1-kernel/kernel.spec
