@@ -1,0 +1,21 @@
+[Unit]
+Description=Telco NFV System Initialization
+Documentation=https://github.com/hunganh1310/telco-jeos-builder
+After=network-pre.target systemd-sysctl.service
+Before=network.target multi-user.target
+Wants=network-pre.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/telco-nfv-init.sh
+StandardOutput=journal+console
+StandardError=journal+console
+
+# Security hardening
+ProtectHome=read-only
+ProtectSystem=false
+ReadWritePaths=/var/log /sys /proc /mnt /etc/sysconfig /etc/sysctl.d /etc/resolv.conf
+
+[Install]
+WantedBy=multi-user.target

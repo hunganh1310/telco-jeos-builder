@@ -3,12 +3,9 @@
 # config.sh - Kiwi post-install script
 # Chạy bên trong rootfs SAU KHI tất cả packages được install
 #
-# Mục đích: Cấu hình OS cho Telco/NFV workloads
-#
 
 set -e
 
-# Load kiwi helper functions
 test -f /.kconfig && . /.kconfig
 test -f /.profile && . /.profile
 
@@ -17,101 +14,82 @@ echo "  Telco JeOS Post-Install Configuration"
 echo "============================================"
 
 # -----------------------------------------------
-# 1. HUGEPAGES SETUP
+# 1. COPY BOOT SCRIPT
 # -----------------------------------------------
-echo "[1/5] Configuring HugePages..."
+echo "[1/6] Installing telco-nfv-init boot script..."
 
-# Mount hugetlbfs tự động khi boot
+# Script đã được copy vào image qua kiwi overlay
+# Hoặc tạo trực tiếp ở đây:
+
+mkdir -p /etc/telco-nfv
 mkdir -p /mnt/huge
 
-# Thêm vào /etc/fstab
+# -----------------------------------------------
+# 2. HUGEPAGES FSTAB
+# -----------------------------------------------
+echo "[2/6] Configuring HugePages fstab..."
+
 cat >> /etc/fstab << 'FSTAB'
 # HugePages for DPDK
 hugetlbfs /mnt/huge hugetlbfs defaults,pagesize=2M 0 0
 FSTAB
 
-# Cấu hình số lượng hugepages lúc boot (512 x 2MB = 1GB)
-echo "vm.nr_hugepages = 512" >> /etc/sysctl.d/90-telco-nfv.conf
-
 # -----------------------------------------------
-# 2. NETWORK PERFORMANCE TUNING
+# 3. SYSCTL CONFIG
 # -----------------------------------------------
-echo "[2/5] Configuring network performance..."
+echo "[3/6] Configuring sysctl..."
 
 cat > /etc/sysctl.d/90-telco-nfv.conf << 'SYSCTL'
-# Telco/NFV Network Tuning
-# Tăng buffer size để xử lý burst traffic
 net.core.rmem_max = 134217728
 net.core.wmem_max = 134217728
-net.core.rmem_default = 65536
-net.core.wmem_default = 65536
 net.core.netdev_max_backlog = 250000
 net.core.somaxconn = 65535
-
-# HugePages
-vm.nr_hugepages = 512
-vm.hugetlb_shm_group = 0
-
-# Disable swap (Telco workloads không muốn swap latency)
 vm.swappiness = 0
-
-# NUMA balancing
+vm.nr_hugepages = 1024
 kernel.numa_balancing = 1
 SYSCTL
 
 # -----------------------------------------------
-# 3. CPU ISOLATION GRUB CONFIG
+# 4. KERNEL MODULES AUTOLOAD
 # -----------------------------------------------
-echo "[3/5] Configuring CPU isolation boot params..."
+echo "[4/6] Configuring kernel module autoload..."
 
-# Thêm kernel boot params cho DPDK CPU isolation
-# isolcpus=2-7: Reserve CPUs 2-7 cho DPDK poll-mode driver
-# nohz_full=2-7: Tắt timer tick trên isolated CPUs
-# rcu_nocbs=2-7: Offload RCU callbacks khỏi isolated CPUs
-GRUB_CMDLINE="console=ttyS0,115200 console=tty0 net.ifnames=0 biosdevname=0"
-GRUB_CMDLINE="${GRUB_CMDLINE} hugepagesz=2M hugepages=512"
-GRUB_CMDLINE="${GRUB_CMDLINE} iommu=pt intel_iommu=on"
-GRUB_CMDLINE="${GRUB_CMDLINE} isolcpus=2-3 nohz_full=2-3 rcu_nocbs=2-3"
-
-sed -i "s|^GRUB_CMDLINE_LINUX=.*|GRUB_CMDLINE_LINUX=\"${GRUB_CMDLINE}\"|" \
-    /etc/default/grub 2>/dev/null || true
-
-# -----------------------------------------------
-# 4. VFIO/DPDK SETUP
-# -----------------------------------------------
-echo "[4/5] Configuring VFIO for DPDK..."
-
-# Load vfio-pci module tự động khi boot
 cat > /etc/modules-load.d/telco-nfv.conf << 'MODULES'
-# Telco/NFV kernel modules
 vfio
 vfio-pci
 vhost_net
+tun
+tap
+bonding
+8021q
+bridge
 MODULES
-
-# udev rule: cho phép user bind NIC vào vfio-pci
-cat > /etc/udev/rules.d/90-telco-vfio.rules << 'UDEV'
-# Allow telco user to use VFIO devices (for DPDK)
-SUBSYSTEM=="vfio", OWNER="root", GROUP="telco", MODE="0660"
-UDEV
 
 # -----------------------------------------------
 # 5. SYSTEMD SERVICES
 # -----------------------------------------------
-echo "[5/5] Configuring systemd services..."
+echo "[5/6] Configuring systemd services..."
 
-# Enable essential services
 systemctl enable sshd 2>/dev/null || true
 systemctl enable wicked 2>/dev/null || true
-systemctl enable systemd-networkd 2>/dev/null || true
 
-# Disable unnecessary services (giảm boot time)
+# Enable telco-nfv-init service (nếu file tồn tại)
+if [[ -f /etc/systemd/system/telco-nfv-init.service ]]; then
+    systemctl enable telco-nfv-init.service 2>/dev/null || true
+fi
+
 systemctl disable auditd 2>/dev/null || true
 systemctl disable bluetooth 2>/dev/null || true
-systemctl disable cups 2>/dev/null || true
 
-# Set hostname
+# -----------------------------------------------
+# 6. MISC
+# -----------------------------------------------
+echo "[6/6] Final configuration..."
+
 echo "telco-jeos" > /etc/hostname
+
+# sudo without password for telco user
+echo "telco ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/telco
 
 echo ""
 echo "============================================"
