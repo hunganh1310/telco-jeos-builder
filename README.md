@@ -1,78 +1,126 @@
-## 🎯 Objective
+# Telco JeOS Builder
 
-Build a minimal, performance-tuned Linux OS (JeOS) optimized for Telco/NFV workloads:
-- Custom-compiled Linux Kernel with HugePages, NUMA, IOMMU, VFIO, DPDK-ready features
-- Packaged as QCOW2 image using Kiwi-ng
-- Auto-configured at boot for Telco workloads
-- Benchmarked to prove performance improvements
+Build a minimal Linux JeOS image optimized for Telco/NFV workloads.
 
-## 📋 Lab Tasks
+This repository is organized as a step-by-step lab:
+- Task 1: Configure and package a custom Linux kernel (`6.6.70-telco-nfv`).
+- Task 2: Build a QCOW2 image with Kiwi-NG.
+- Task 3: Apply boot-time Telco tuning (HugePages, networking, modules, sysctl).
+- Task 4: Validate kernel features and run benchmark-oriented checks.
 
-| Task | Description | Status |
-|------|-------------|--------|
-| [Task 1](task1-kernel/) | Kernel Hacking — Compile custom kernel with Telco features | 🔄 In progress |
-| [Task 2](task2-kiwi/) | Kiwi-ng — Package OS as QCOW2 image | ⏳ Pending |
-| [Task 3](task3-bootscript/) | Boot Script — Auto-configure IP & HugePages | ⏳ Pending |
-| [Task 4](task4-testing/) | Testing — Benchmark & validate | ⏳ Pending |
+## Goal
 
-## 🏗️ Architecture
+Produce a lightweight QCOW2 image suitable for NFV/VNF environments with:
+- HugePages and NUMA-aware behavior.
+- IOMMU + VFIO readiness for passthrough workloads.
+- KVM/virtio/vhost-net support.
+- Low-latency tuning (`PREEMPT`, `NO_HZ_FULL`) and Telco NIC drivers.
+
+## Repository Structure
+
 ```text
-┌─────────────────────────────────────────────┐
-│              QCOW2 Image (Kiwi-ng)          │
-│  ┌────────────────────────────────────────┐ │
-│  │  Custom Kernel 6.6.70-telco-nfv        │ │
-│  │  ├── HugePages (2MB/1GB)               │ │
-│  │  ├── NUMA-aware scheduling             │ │
-│  │  ├── IOMMU (VT-d / AMD-Vi)             │ │
-│  │  ├── VFIO (PCIe passthrough)           │ │
-│  │  ├── PREEMPT + NO_HZ_FULL              │ │
-│  │  └── eBPF/XDP networking               │ │
-│  ├────────────────────────────────────────┤ │
-│  │  openSUSE JeOS (minimal)               │ │
-│  ├────────────────────────────────────────┤ │
-│  │  Boot Script (telco-init.service)      │ │
-│  │  ├── Auto-configure HugePages          │ │
-│  │  ├── Auto-configure networking         │ │
-│  │  └── CPU isolation setup               │ │
-│  └────────────────────────────────────────┘ │
-└─────────────────────────────────────────────┘
+.
+|-- docs/
+|-- task1-kernel/
+|   |-- configure-telco-kernel.sh
+|   |-- kernel-telco-nfv.spec
+|   |-- telco-nfv.config
+|   `-- kernel-features.md
+|-- task2-kiwi/
+|   `-- description/
+|       |-- config.xml
+|       |-- config.sh
+|       `-- root/
+|           |-- etc/systemd/system/telco-nfv-init.service
+|           |-- etc/telco-nfv/config
+|           `-- usr/local/bin/telco-nfv-init.sh
+|-- task3-bootscript/
+|   |-- telco-nfv-init.sh
+|   |-- telco-nfv-init.service
+|   `-- telco-nfv-config.sample
+`-- task4-testing/
+	`-- telco-kernel-test.sh
 ```
 
+## End-to-End Workflow
 
-## 🛠️ Tech Stack
+### 1) Kernel configuration and build prep
 
-- **Base OS**: openSUSE Tumbleweed / SLES 15
-- **Kernel**: Linux 6.6.70 LTS (custom compiled)
-- **Image Builder**: Kiwi-ng
-- **Build Environment**: WSL2 on Windows
+`task1-kernel/configure-telco-kernel.sh` must be executed inside the Linux kernel source tree.
 
-## 📖 Key Kernel Features Enabled
-
-| Category | Features | Purpose |
-|----------|----------|---------|
-| Memory | HugePages, THP, NUMA | Reduce TLB misses, memory-local allocation |
-| Virtualization | KVM, VFIO, vhost-net | VM hosting & PCIe passthrough |
-| IOMMU | Intel VT-d, AMD-Vi | Safe DMA remapping for passthrough |
-| Networking | Bridge, VLAN, Bonding, XDP | High-performance virtual networking |
-| Scheduling | PREEMPT, NO_HZ_FULL | Low-latency, CPU isolation |
-| NIC Drivers | i40e, ice, mlx5 | Intel/Mellanox Telco NICs |
-
-## 🚀 Quick Start
+Example:
 
 ```bash
-# Task 1: Build custom kernel
-cd task1-kernel
-bash configure-telco-kernel.sh
-# (See task1-kernel/README.md for full instructions)
+cd /path/to/linux-6.6.70
+bash /path/to/telco-jeos-builder/task1-kernel/configure-telco-kernel.sh
 ```
 
-## 📚 References
-- Linux Kernel Documentation
-- DPDK System Requirements
-- Red Hat NFV Tuning Guide
-- Kiwi-ng Documentation
-- openSUSE JeOS
+What it does:
+- Starts from `defconfig`.
+- Enables Telco/NFV options (HugePages, NUMA, IOMMU, VFIO, KVM, XDP/eBPF, NIC drivers).
+- Applies `-telco-nfv` local version.
+- Runs `olddefconfig` and prints verification output.
 
-## 👤 Author
-- Hung Anh To | anh.to@ericsson.com | hunganh1310.work@gmail.com
+### 2) Build JeOS image with Kiwi-NG
+
+Main definition: `task2-kiwi/description/config.xml`.
+
+Current image profile highlights:
+- Format: `qcow2`.
+- Base: openSUSE Tumbleweed packages.
+- Includes custom RPM `kernel-telco-nfv` from local repository path in `config.xml`.
+- Kernel cmdline pre-sets IOMMU/HugePages-related boot parameters.
+
+Post-install customization is handled by `task2-kiwi/description/config.sh`:
+- Creates HugePages mountpoint and fstab entry.
+- Adds sysctl tuning.
+- Configures module autoload.
+- Enables required services (including `telco-nfv-init.service` when present).
+
+### 3) Boot-time initialization
+
+Standalone boot script artifacts are in `task3-bootscript/`:
+- `telco-nfv-init.sh`: runtime setup for HugePages, network mode, module loading, NUMA checks, and sysctl tuning.
+- `telco-nfv-init.service`: systemd unit to run the script at startup.
+- `telco-nfv-config.sample`: optional override file for `/etc/telco-nfv/config`.
+
+### 4) Verification and benchmark-oriented testing
+
+Run:
+
+```bash
+bash task4-testing/telco-kernel-test.sh
+```
+
+The test suite covers:
+- Offline `.config` validation (feature matrix).
+- Runtime checks when booted with the custom kernel.
+- Image/kernel/module-size and readiness comparisons.
+
+## Key Files
+
+- `task1-kernel/configure-telco-kernel.sh`: kernel option automation for NFV use cases.
+- `task1-kernel/kernel-telco-nfv.spec`: RPM packaging spec for custom kernel.
+- `task2-kiwi/description/config.xml`: Kiwi image definition.
+- `task2-kiwi/description/config.sh`: post-install provisioning inside image build.
+- `task3-bootscript/telco-nfv-init.sh`: first-boot/runtime Telco initializer.
+- `task4-testing/telco-kernel-test.sh`: validation and benchmark helper.
+
+## Notes
+
+- Repository is designed for Linux build environments (WSL2 is acceptable).
+- Some paths in scripts/configs are environment-specific (for example local RPM repository path). Adjust to your machine before full build.
+- For detailed kernel option rationale, see `task1-kernel/kernel-features.md`.
+
+## References
+
+- Linux Kernel Documentation: https://www.kernel.org/doc/html/latest/
+- DPDK System Requirements: https://doc.dpdk.org/guides/linux_gsg/sys_reqs.html
+- Kiwi-NG Docs: https://osinside.github.io/kiwi/
+
+## Author
+
+Hung Anh To  
+anh.to@ericsson.com  
+hunganh1310.work@gmail.com
 
