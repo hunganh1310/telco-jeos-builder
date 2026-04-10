@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<image schemaversion="7.4" name="telco-jeos">
+    <description type="system">
+        <author>Hung Anh</author>
+        <contact>etoxanh</contact>
+        <specification>
+            Telco JeOS Image - Linux 6.6.70-telco-nfv
+            Minimal OS for NFV/VNF workloads (DPDK, KVM, VFIO)
+        </specification>
+    </description>
+
+    <preferences>
+        <version>1.0.0</version>
+        <packagemanager>zypper</packagemanager>
+        <locale>en_US</locale>
+        <keytable>us</keytable>
+        <timezone>UTC</timezone>
+        <rpm-check-signatures>false</rpm-check-signatures>
+
+        <type
+            image="oem"
+            filesystem="ext4"
+            format="qcow2"
+            firmware="bios"
+            kernelcmdline="console=ttyS0,115200 console=tty0 net.ifnames=0 biosdevname=0 hugepagesz=2M hugepages=512 iommu=pt intel_iommu=on"
+        >
+            <bootloader name="grub2" console="serial" timeout="3"/>
+            <oemconfig>
+                <oem-resize>false</oem-resize>
+            </oemconfig>
+        </type>
+    </preferences>
+
+    <!-- openSUSE Tumbleweed repo -->
+    <repository type="rpm-md" alias="openSUSE-Tumbleweed-Oss" priority="1">
+        <source path="https://download.opensuse.org/tumbleweed/repo/oss/"/>
+    </repository>
+
+    <!-- Local repo chứa kernel RPM -->
+    <repository type="rpm-md" alias="telco-kernel-local" priority="0">
+        <source path="dir:///home/etoxanh/telco-lab/telco-jeos-builder/task1-kernel/rpmbuild/RPMS/x86_64/"/>
+    </repository>
+
+    <!-- BOOTSTRAP -->
+    <packages type="bootstrap">
+        <package name="filesystem"/>
+        <package name="glibc-locale-base"/>
+        <package name="ca-certificates"/>
+        <package name="ca-certificates-mozilla"/>
+        <package name="openssl"/>
+        <package name="coreutils"/>
+        <package name="bash"/>
+    </packages>
+
+    <packages type="image">
+        <!-- KERNEL từ Task 1 -->
+        <package name="kernel-telco-nfv"/>
+
+        <!-- BASE SYSTEM -->
+        <package name="systemd"/>
+        <package name="dbus-1"/>
+        <package name="udev"/>
+        <package name="util-linux"/>
+        <package name="grep"/>
+        <package name="sed"/>
+        <package name="gawk"/>
+        <package name="less"/>
+        <package name="which"/>
+        <package name="procps"/>
+        <package name="iputils"/>
+        <package name="iproute2"/>
+        <package name="shadow"/>
+        <package name="pam"/>
+        <package name="pam_pwquality"/>
+        <package name="gzip"/>
+        <package name="tar"/>
+        <package name="xz"/>
+        <package name="dracut"/>
+        <package name="kmod"/>
+
+        <!-- NETWORKING -->
+        <package name="wicked"/>
+        <package name="openssh"/>
+        <package name="openssh-server"/>
+        <package name="ethtool"/>
+        <package name="bridge-utils"/>
+
+        <!-- TELCO/NFV TOOLS -->
+        <package name="numactl"/>
+        <package name="hwloc"/>
+        <package name="tuned"/>
+
+        <!-- BOOTLOADER -->
+        <package name="grub2"/>
+
+        <!-- MISC -->
+        <package name="vim"/>
+        <package name="curl"/>
+        <package name="wget"/>
+        <package name="sudo"/>
+        <package name="timezone"/>
+    </packages>
+
+    <!-- XÓA busybox để tránh conflict -->
+    <packages type="delete">
+        <package name="busybox-coreutils"/>
+        <package name="busybox-util-linux"/>
+        <package name="busybox-gzip"/>
+        <package name="busybox-sed"/>
+        <package name="busybox-grep"/>
+        <package name="busybox-findutils"/>
+        <package name="busybox-diffutils"/>
+        <package name="busybox-hostname"/>
+        <package name="busybox-tar"/>
+        <package name="busybox-xz"/>
+        <package name="busybox-which"/>
+        <package name="busybox-less"/>
+        <package name="busybox-gawk"/>
+    </packages>
+
+    <!-- USERS (password: linux) -->
+    <users>
+        <user
+            password="$1$wYJUgpM5$RXMMeRAfUG3J1NbKTrQFG0"
+            home="/root"
+            name="root"
+            groups="root"
+        />
+        <user
+            password="$1$wYJUgpM5$RXMMeRAfUG3J1NbKTrQFG0"
+            home="/home/telco"
+            name="telco"
+            groups="telco,wheel"
+            shell="/bin/bash"
+        />
+    </users>
+
+</image>

@@ -1,4 +1,4 @@
-# Kernel source
+# Kernel source (quá lớn ~1.3GB)
 linux-*/
 *.tar.xz
 *.tar.gz
@@ -15,17 +15,23 @@ Module.symvers
 vmlinux
 vmlinuz
 
-# RPM packages
+# RPM packages (binary lớn)
 *.rpm
 rpmbuild/
+task1-kernel/staging/
 
-# Kiwi-ng build output
-build/
-image-root/
+# Kiwi-ng build output (binary lớn)
+task2-kiwi/build/
 *.qcow2
 *.raw
 *.iso
 *.vmdk
+
+# Repo metadata (tạo lại bằng createrepo_c)
+repodata/
+
+# Logs
+*.log
 
 # OS / Editor
 .DS_Store
@@ -34,13 +40,3 @@ image-root/
 *~
 .vscode/
 .idea/
-
-# Logs
-*.log
-
-# Kernel staging (binary modules, tạo lại bằng make modules_install)
-task1-kernel/staging/
-task1-kernel/rpmbuild/
-task1-kernel/rpm-build.log
-task1-kernel/kernel-build*.log
-task1-kernel/kernel.spec
