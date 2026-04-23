@@ -1,4 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  config.xml — Kiwi-NG image definition for Telco JeOS
+  
+  This builds a minimal QCOW2 image optimized for NFV/VNF workloads.
+  
+  Prerequisites:
+    - Custom kernel RPM built and available in a local repo
+    - Update the telco-kernel-local source path below to match your environment
+    
+  Build:
+    sudo kiwi-ng system build \
+      - -description ./image \
+      - -target-dir  ./build/image
+-->
 
 <image schemaversion="7.4" name="telco-jeos">
     <description type="system">
@@ -32,17 +46,28 @@
         </type>
     </preferences>
 
-    <!-- openSUSE Tumbleweed repo -->
+    <!-- ================================================================
+         REPOSITORIES
+         ================================================================ -->
+
+    <!-- openSUSE Tumbleweed base repository -->
     <repository type="rpm-md" alias="openSUSE-Tumbleweed-Oss" priority="1">
         <source path="https://download.opensuse.org/tumbleweed/repo/oss/"/>
     </repository>
 
-    <!-- Local repo chứa kernel RPM -->
+    <!--
+        Local repository containing the custom kernel RPM.
+        IMPORTANT: Update this path to match your build environment.
+        After building the kernel RPM, run:
+          createrepo_c /path/to/rpmbuild/RPMS/x86_64/
+    -->
     <repository type="rpm-md" alias="telco-kernel-local" priority="0">
-        <source path="dir:///home/etoxanh/telco-lab/telco-jeos-builder/task1-kernel/rpmbuild/RPMS/x86_64/"/>
+        <source path="dir:///REPLACE_WITH_REPO_PATH/"/>
     </repository>
 
-    <!-- BOOTSTRAP -->
+    <!-- ================================================================
+         BOOTSTRAP PACKAGES (minimal root filesystem)
+         ================================================================ -->
     <packages type="bootstrap">
         <package name="filesystem"/>
         <package name="glibc-locale-base"/>
@@ -53,11 +78,14 @@
         <package name="bash"/>
     </packages>
 
+    <!-- ================================================================
+         IMAGE PACKAGES
+         ================================================================ -->
     <packages type="image">
-        <!-- KERNEL từ Task 1 -->
+        <!-- Custom Telco/NFV kernel -->
         <package name="kernel-telco-nfv"/>
 
-        <!-- BASE SYSTEM -->
+        <!-- Base system -->
         <package name="systemd"/>
         <package name="dbus-1"/>
         <package name="udev"/>
@@ -79,22 +107,22 @@
         <package name="dracut"/>
         <package name="kmod"/>
 
-        <!-- NETWORKING -->
+        <!-- Networking -->
         <package name="wicked"/>
         <package name="openssh"/>
         <package name="openssh-server"/>
         <package name="ethtool"/>
         <package name="bridge-utils"/>
 
-        <!-- TELCO/NFV TOOLS -->
+        <!-- Telco/NFV tools -->
         <package name="numactl"/>
         <package name="hwloc"/>
         <package name="tuned"/>
 
-        <!-- BOOTLOADER -->
+        <!-- Bootloader -->
         <package name="grub2"/>
 
-        <!-- MISC -->
+        <!-- Utilities -->
         <package name="vim"/>
         <package name="curl"/>
         <package name="wget"/>
@@ -102,7 +130,9 @@
         <package name="timezone"/>
     </packages>
 
-    <!-- XÓA busybox để tránh conflict -->
+    <!-- ================================================================
+         PACKAGE REMOVAL (busybox conflicts)
+         ================================================================ -->
     <packages type="delete">
         <package name="busybox-coreutils"/>
         <package name="busybox-util-linux"/>
@@ -119,10 +149,12 @@
         <package name="busybox-gawk"/>
     </packages>
 
-    <!-- USERS (password: linux) -->
+    <!-- ================================================================
+         USERS (default password: linux)
+         ================================================================ -->
     <users>
         <user
-            password="$1$wYJUgpM5$RXMMeRAfUG3J1NbKTrQFG0"
+            password="!"
             home="/root"
             name="root"
             groups="root"

@@ -1,0 +1,25 @@
+# ===========================================================================
+# /etc/telco-nfv/config
+#
+# Runtime configuration overrides for telco-nfv-init.sh
+# This file is sourced by the boot-time initializer.
+#
+# To customize: edit values below and save.
+# All values have sane defaults; only override what you need.
+# ===========================================================================
+
+# HugePages allocation
+HUGEPAGES_2M=1024        # 1024 x 2MB = 2GB reserved for DPDK
+HUGEPAGES_1G=0           # 1GB hugepages (requires boot param hugepagesz=1G)
+
+# Network configuration
+NET_MODE="dhcp"          # "dhcp" or "static"
+NET_IFACE="eth0"         # Primary network interface
+
+# Static IP settings (only used when NET_MODE="static")
+NET_IP="192.168.1.100/24"
+NET_GATEWAY="192.168.1.1"
+NET_DNS="8.8.8.8"
+
+# Kernel modules to load at boot
+TELCO_MODULES="vfio vfio-pci vhost_net tun bonding 8021q bridge"
