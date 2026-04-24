@@ -219,5 +219,4 @@ The test suite evaluates four main areas:
 ## 👤 Author
 
 **Hung Anh To**  
-Ascent Cloud Engineer Lab @ Ericsson  
 Email: anh.to@ericsson.com | hunganh1310.work@gmail.com
